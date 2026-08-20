@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMAH Finger of God - Official Invoice</title>
+
+    <!-- PWA: Manifest & Theme -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#032e22">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TEM Invoice">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Google Fonts for Modern Typography & Authentic Calligraphy Signatures -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Herr+Von+Muellerhoff&family=Inspiration&family=Inter:wght@400;500;600;700;800;900&family=Italianno&family=Monsieur+La+Doulaise&family=Mrs+Saint+Delafield&family=Outfit:wght@500;600;700;800;900&family=Pinyon+Script&family=Sacramento&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Top Toolbar -->
+        <div class="toolbar no-print" id="top-toolbar">
+            <button id="add-item-btn" class="btn btn-add">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v8M8 12h8" />
+                </svg>
+                Add Item
+            </button>
+            <button id="print-btn" class="btn btn-print">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                Print Invoice / PDF
+            </button>
+            <button id="save-btn" class="btn btn-history">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                </svg>
+                Save to History
+            </button>
+            <button id="new-btn" class="btn btn-new">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                New Invoice
+            </button>
+            <button id="export-csv-btn" class="btn btn-export" title="Export Invoices to Microsoft Excel / CSV">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Export to Excel / CSV
+            </button>
+            <button id="save-file-btn" class="btn btn-savefile" title="Download backup of all saved invoices">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                Save Backup
+            </button>
+            <button id="merge-file-btn" class="btn btn-mergefile" title="Merge invoice history from another device without overwriting">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                Merge History
+            </button>
+            <input type="file" id="merge-file-input" accept=".json,application/json" hidden>
+            <button id="sync-qr-btn" class="btn btn-qrsync" title="Transfer or receive invoices between devices offline via QR code">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                QR Sync
+            </button>
+            <button id="load-file-btn" class="btn btn-loadfile" title="Replace current invoice from file">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 12-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                Restore File
+            </button>
+            <input type="file" id="file-input" accept=".json,application/json" hidden>
+            <button id="remove-logo-btn" class="btn btn-remove" hidden>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                Remove Logo
+            </button>
+
+            <div class="paper-selector-wrapper">
+                <label for="paper-size-select">Paper:</label>
+                <select id="paper-size-select" title="Choose Paper Size & Format">
+                    <option value="10cm" selected>🧾 80mm / 10cm (Thermal Roll / POS)</option>
+                    <option value="a4">📄 A4 (Full Page)</option>
+                </select>
+            </div>
+
+            <div class="currency-selector-wrapper">
+                <label for="currency">Currency:</label>
+                <select id="currency" title="Select currency">
+                    <option value="GH₵" selected>GH₵ Ghana Cedis (GHS)</option>
+                    <option value="$">$ US Dollar (USD)</option>
+                    <option value="€">€ Euro (EUR)</option>
+                    <option value="£">£ British Pound (GBP)</option>
+                    <option value="₦">₦ Nigerian Naira (NGN)</option>
+                </select>
+                <span id="currency-label" hidden></span>
+            </div>
+        </div>
+
+        <!-- Main Invoice Container -->
+        <div class="invoice" id="invoice">
+            <div class="top-dots-pattern"></div>
+
+            <!-- Invoice Header Section -->
+            <div class="invoice-header">
+                <!-- Left: Logo Area -->
+                <div class="logo-area-wrapper">
+                    <div class="logo-area" id="logo-area" title="Click to upload your logo">
+                        <img id="logo-img" alt="Company Logo" hidden>
+                        <div id="logo-placeholder" class="logo-placeholder">
+                            <input type="file" id="logo-input" accept="image/*" hidden>
+                            <svg viewBox="0 0 48 48" width="38" height="38" fill="none" stroke="#045e43"
+                                stroke-width="2.5">
+                                <rect x="4" y="8" width="40" height="32" rx="4" />
+                                <circle cx="18" cy="22" r="5" />
+                                <path d="M4 36l10-10 8 8 6-6 16 12" />
+                            </svg>
+                            <span class="logo-upload-hint">+ Upload Logo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Business Information (Click to Edit) -->
+                <div class="business-info">
+                    <h1 class="brand-title">TEMAH</h1>
+                    <h2 class="brand-subtitle">FINGER OF GOD</h2>
+                    <div class="brand-pill">
+                        <span>QUALITY</span>
+                        <span class="dot">•</span>
+                        <span>TRUST</span>
+                        <span class="dot">•</span>
+                        <span>AFFORDABLE</span>
+                    </div>
+                    <div class="contact-details">
+                        <p class="contact-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                            </svg>
+                            <span id="biz-address" contenteditable="true" class="editable-biz-field"
+                                title="Click to edit address">Abeka Main St., Abeka - Accra</span>
+                        </p>
+                        <p class="contact-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                            </svg>
+                            <span id="biz-phone" contenteditable="true" class="editable-biz-field"
+                                title="Click to edit phone">+233 24 463 1680</span>
+                        </p>
+                        <p class="contact-item">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                            </svg>
+                            <span id="biz-email" contenteditable="true" class="editable-biz-field"
+                                title="Click to edit email">temahfingerofgod@gmail.com</span>
+                        </p>
+                    </div>
+                    <p class="tagline-cursive">Thank you for shopping with us!</p>
+                </div>
+
+                <!-- Right: Invoice Official Receipt Badge & Status Stamp -->
+                <div class="invoice-badge-wrapper">
+                    <div class="invoice-official-badge">
+                        <div class="badge-icon-circle">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                            </svg>
+                        </div>
+                        <div class="badge-text-group">
+                            <h3 class="badge-heading">INVOICE</h3>
+                            <span class="badge-subheading">— OFFICIAL RECEIPT —</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two-Column Cards: Customer & Invoice Details -->
+            <div class="cards-grid">
+                <!-- Customer Card -->
+                <div class="info-card customer-card">
+                    <div class="card-header-tab">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                        <span>Customer (Optional)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <label for="customer-name">Customer Name:</label>
+                            <input type="text" id="customer-name" placeholder="Enter customer name" class="pill-input">
+                        </div>
+                        <div class="form-row">
+                            <label for="customer-phone">Phone:</label>
+                            <input type="text" id="customer-phone" placeholder="Enter phone number" class="pill-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Details Card -->
+                <div class="info-card invoice-details-card">
+                    <div class="card-header-tab">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+                        </svg>
+                        <span>Invoice Details</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="meta-row">
+                            <span class="meta-label">Invoice No:</span>
+                            <div class="inv-num-wrapper">
+                                <span class="meta-value" id="invoice-number"
+                                    title="Click to customize prefix">TEM-POS1-20260818-001</span>
+                                <button type="button" id="edit-prefix-btn" class="edit-prefix-btn no-print"
+                                    title="Edit invoice prefix & terminal code">⚙</button>
+                            </div>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Terminal / Reg:</span>
+                            <div class="terminal-num-wrapper">
+                                <span class="terminal-badge" id="terminal-badge" title="Unique Device / Terminal ID (avoids numbering clashes offline)">POS1</span>
+                                <button type="button" id="edit-terminal-btn" class="edit-terminal-btn no-print" title="Change Terminal ID for this device">Edit</button>
+                            </div>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Date:</span>
+                            <span class="meta-value" id="invoice-date"></span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Time:</span>
+                            <span class="meta-value" id="invoice-time"></span>
+                        </div>
+                        <div class="meta-row cashier-row">
+                            <label for="cashier-input" class="meta-label">Cashier:</label>
+                            <input type="text" id="cashier-input" placeholder="..................................."
+                                class="cashier-input">
+                        </div>
+                        <div class="meta-row payment-status-row">
+                            <div class="payment-method-group">
+                                <label for="payment-method" class="meta-label">Payment:</label>
+                                <select id="payment-method" class="pill-select" title="Select payment method">
+                                    <option value="Cash" selected>Cash</option>
+                                    <option value="MoMo">MoMo (Mobile Money)</option>
+                                    <option value="Card">Card / POS</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                                <span id="payment-method-print" class="print-only">Cash</span>
+                            </div>
+                            <div class="status-stamp-wrapper">
+                                <button type="button" id="payment-status-badge" class="status-stamp status-paid"
+                                    title="Click to toggle status (PAID / PENDING / UNPAID)">
+                                    <span class="status-icon">✔</span>
+                                    <span class="status-text">PAID</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table + Always-Centered Watermark -->
+            <div class="table-section-wrapper">
+                <!-- Watermark sits OUTSIDE the scrollable container so overflow-x:auto never clips it -->
+                <div class="invoice-watermark" id="invoice-watermark">
+                    <img id="watermark-img" alt="" hidden>
+                </div>
+                <div class="table-container">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-desc">Item Description</th>
+                                <th class="col-qty">Qty</th>
+                                <th class="col-price" id="th-unit-price">Unit Price (GH₵)</th>
+                                <th class="col-total" id="th-total-price">Total (GH₵)</th>
+                                <th class="col-action no-print">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-items">
+                            <!-- Dynamic Item Rows generated by script.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Add Item Button under Table -->
+            <div class="table-add-row-wrapper no-print">
+                <button type="button" id="table-add-item-btn" class="btn-table-add" title="Add a new row to the table (or press Enter on Price)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v8M8 12h8" />
+                    </svg>
+                    <span>+ Add Item Row</span>
+                    <span class="btn-shortcut-hint">(or press Enter on Price)</span>
+                </button>
+            </div>
+
+            <!-- Bottom Section: Notes, Script & Summary -->
+            <div class="bottom-section">
+                <!-- Left: Notes Box -->
+                <div class="notes-box">
+                    <div class="notes-header">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path
+                                d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" />
+                            <path d="M12 6h2v5h-2zm0 6h2v2h-2z" />
+                        </svg>
+                        <strong>Note:</strong>
+                    </div>
+                    <ul class="notes-list">
+                        <li>
+                            <svg class="check-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>Goods sold are non-refundable.</span>
+                        </li>
+                        <li>
+                            <svg class="check-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>Please keep this invoice for any exchange.</span>
+                        </li>
+                        <li>
+                            <svg class="check-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>We appreciate your business!</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Center: Handwritten Thank You -->
+                <div class="thank-you-center">
+                    <div class="thank-you-text">Thank You!</div>
+                    <svg class="smiley-smile" viewBox="0 0 50 20" width="45" height="18">
+                        <path d="M 5,5 Q 25,22 45,5" fill="none" stroke="#111" stroke-width="2.5"
+                            stroke-linecap="round" />
+                        <circle cx="12" cy="4" r="1.5" fill="#111" />
+                        <circle cx="38" cy="4" r="1.5" fill="#111" />
+                    </svg>
+                </div>
+
+                <!-- Right: Summary Box with Discount Toggle -->
+                <div class="summary-box">
+                    <div class="summary-line">
+                        <span class="sum-label">Subtotal:</span>
+                        <span class="sum-value" id="subtotal">GH₵ 0.00</span>
+                    </div>
+                    <div class="summary-line calc-row">
+                        <span class="sum-label">Discount:</span>
+                        <div class="calc-input-group">
+                            <input type="number" id="discount-input" value="0" min="0" step="any"
+                                class="small-pill-input">
+                            <button type="button" id="discount-type-btn" class="discount-toggle-btn"
+                                title="Click to switch between percentage (%) and fixed amount (GH₵)">%</button>
+                        </div>
+                        <span id="discount-amount" class="calc-diff-amount print-only"></span>
+                    </div>
+                    <div class="summary-line calc-row">
+                        <span class="sum-label">VAT:</span>
+                        <div class="calc-input-group">
+                            <input type="number" id="vat-input" value="0" min="0" max="100" step="any"
+                                class="small-pill-input">
+                            <span class="percent-sign">%</span>
+                        </div>
+                        <span id="vat-amount" class="vat-val-text">GH₵ 0.00</span>
+                    </div>
+                    <div class="grand-total-banner">
+                        <span class="grand-label">GRAND TOTAL:</span>
+                        <div class="grand-badge">
+                            <span id="invoice-total">GH₵ 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signatures Section with Interactive Slots -->
+            <div class="signatures-wrapper">
+                <div class="signature-block" id="manager-sig-block">
+                    <span class="sig-title">Manager's Signature</span>
+                    <div class="sig-slot" id="manager-sig-slot" title="Click to add or change Manager's Signature">
+                        <div class="sig-placeholder no-print" id="manager-sig-placeholder">+ Click to Sign / Stamp</div>
+                        <img id="manager-sig-img" class="sig-img" alt="Manager Signature" hidden>
+                        <button type="button" id="clear-manager-sig" class="sig-clear-btn no-print"
+                            title="Clear signature" hidden>&times;</button>
+                    </div>
+                    <div class="sig-underline"></div>
+                </div>
+                <div class="signature-block right" id="customer-sig-block">
+                    <span class="sig-title">Customer's Signature</span>
+                    <div class="sig-slot" id="customer-sig-slot" title="Click to add or change Customer's Signature">
+                        <div class="sig-placeholder no-print" id="customer-sig-placeholder">+ Click to Sign</div>
+                        <img id="customer-sig-img" class="sig-img" alt="Customer Signature" hidden>
+                        <button type="button" id="clear-customer-sig" class="sig-clear-btn no-print"
+                            title="Clear signature" hidden>&times;</button>
+                    </div>
+                    <div class="sig-underline"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Decorative Banner -->
+            <div class="bottom-banner-wave">
+                <div class="banner-gold-line left"></div>
+                <div class="banner-slogan">“ YOUR TRUST MAKES US GROW ”</div>
+                <div class="banner-gold-line right"></div>
+            </div>
+        </div>
+
+        <!-- History Section with Search/Filter & Excel Export -->
+        <div class="history no-print" id="history">
+            <div class="history-header-bar">
+                <div class="history-title-group">
+                    <h3>Saved Invoices History</h3>
+                    <span class="offline-sync-indicator" title="All data stored 100% locally on this device">💾 Local Offline Storage</span>
+                </div>
+                <div class="history-header-actions">
+                    <button id="history-merge-btn" class="btn-hist-action" title="Merge invoices from another phone/device without deleting existing history">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                        Merge Device Data
+                    </button>
+                    <button id="history-qr-btn" class="btn-hist-action" title="Scan or display QR codes for offline invoice syncing">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        QR Sync
+                    </button>
+                    <button id="export-history-btn" class="btn btn-export-small"
+                        title="Download all saved invoices as an Excel spreadsheet">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="history-search-bar">
+                <div class="search-input-wrapper">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input type="text" id="history-search" placeholder="Search by name, invoice no, or amount..." class="history-search-input">
+                    <button id="history-search-clear" class="search-clear-btn" title="Clear search" hidden>&times;</button>
+                </div>
+                <div class="history-filter-group">
+                    <select id="history-filter-status" class="pill-select" title="Filter by payment status">
+                        <option value="">All Statuses</option>
+                        <option value="PAID">✔ Paid</option>
+                        <option value="PENDING">⏳ Pending</option>
+                        <option value="UNPAID">✖ Unpaid</option>
+                    </select>
+                    <select id="history-filter-sort" class="pill-select" title="Sort by">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="highest">Highest Amount</option>
+                        <option value="lowest">Lowest Amount</option>
+                    </select>
+                </div>
+                <div class="history-stats" id="history-stats"></div>
+            </div>
+
+            <ul class="history-list" id="history-list"></ul>
+        </div>
+
+        <h5 class="credit no-print">Possi Gee's Designs &copy;2026</h5>
+    </div>
+
+    <!-- Animated Print Preview Modal -->
+    <div class="print-preview-overlay no-print" id="print-preview-overlay" hidden>
+        <div class="print-preview-panel" id="print-preview-panel">
+            <div class="print-preview-header">
+                <div class="preview-header-left">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <h3>Print Preview</h3>
+                </div>
+                <div class="preview-header-actions">
+                    <button id="preview-print-btn" class="btn btn-print">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Print / Save PDF
+                    </button>
+                    <button id="preview-close-btn" class="btn btn-sig-cancel">✕ Close</button>
+                </div>
+            </div>
+            <div class="print-preview-body">
+                <div class="print-preview-paper" id="print-preview-paper">
+                    <!-- Cloned invoice renders here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All-in-One Signature Modal (Draw, Upload, Realistic Autograph Type) -->
+    <div class="sig-modal-overlay no-print" id="sig-modal-overlay" hidden>
+        <div class="sig-modal">
+            <div class="sig-modal-header">
+                <h3 id="sig-modal-title">Sign Invoice</h3>
+                <button type="button" id="sig-modal-close" class="modal-close-btn">&times;</button>
+            </div>
+
+            <div class="sig-modal-tabs">
+                <button type="button" class="sig-tab-btn active" data-tab="draw">✏️ Draw Pad</button>
+                <button type="button" class="sig-tab-btn" data-tab="upload">📁 Upload Stamp / Image</button>
+                <button type="button" class="sig-tab-btn" data-tab="type">✍️ Generate Real Autograph</button>
+            </div>
+
+            <div class="sig-modal-body">
+                <!-- Tab 1: Draw -->
+                <div class="sig-tab-panel active" id="sig-panel-draw">
+                    <div class="canvas-wrapper">
+                        <canvas id="sig-canvas" width="460" height="160"></canvas>
+                    </div>
+                    <div class="canvas-tools">
+                        <button type="button" id="clear-canvas-btn" class="btn-canvas-tool">Clear Pad</button>
+                        <div class="color-picker-group">
+                            <span>Ink:</span>
+                            <button type="button" class="color-dot active" data-color="#032e22"
+                                style="background: #032e22;" title="Dark Green"></button>
+                            <button type="button" class="color-dot" data-color="#1d4ed8" style="background: #1d4ed8;"
+                                title="Blue"></button>
+                            <button type="button" class="color-dot" data-color="#000000" style="background: #000000;"
+                                title="Black"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Upload -->
+                <div class="sig-tab-panel" id="sig-panel-upload" hidden>
+                    <div class="sig-upload-box" id="sig-upload-box">
+                        <input type="file" id="sig-file-input" accept="image/*" hidden>
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#045e43" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p id="sig-upload-text">Click to choose signature image or official stamp (PNG, JPG)</p>
+                        <div id="sig-upload-preview-wrapper" hidden>
+                            <img id="sig-upload-preview" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Authentic Autograph Generator (Type) -->
+                <div class="sig-tab-panel" id="sig-panel-type" hidden>
+                    <div class="type-input-group">
+                        <label for="sig-text-input">Type Signer Name:</label>
+                        <div class="sig-input-row">
+                            <input type="text" id="sig-text-input" placeholder="e.g. Isaac K. Temah" class="pill-input">
+                        </div>
+                        <div class="sig-format-chips">
+                            <span class="chips-label">Quick format:</span>
+                            <button type="button" class="sig-format-chip active" data-format="full">Full Name</button>
+                            <button type="button" class="sig-format-chip" data-format="initials-surname">I. K. Surname</button>
+                            <button type="button" class="sig-format-chip" data-format="monogram">I. Surname</button>
+                            <button type="button" class="sig-format-chip" data-format="first-initial">First + Init.</button>
+                        </div>
+                    </div>
+
+                    <div class="signature-options-bar">
+                        <div class="flourish-select-group">
+                            <label for="sig-flourish-style">Flourish Swash:</label>
+                            <select id="sig-flourish-style" class="pill-select-sm">
+                                <option value="paraph" selected>Executive Paraph Loop (Underflow)</option>
+                                <option value="flick">Rapid Pen Flick & Tail</option>
+                                <option value="double">Double Calligraphy Underline</option>
+                                <option value="strike">Cross-Stroke Swash</option>
+                                <option value="clean">Clean (No Underline)</option>
+                            </select>
+                        </div>
+                        <div class="color-picker-group">
+                            <span>Ink:</span>
+                            <button type="button" class="color-dot type-color-dot active" data-color="#032e22"
+                                style="background: #032e22;" title="Emerald Fountain Ink"></button>
+                            <button type="button" class="color-dot type-color-dot" data-color="#1d4ed8"
+                                style="background: #1d4ed8;" title="Royal Blue Ballpoint"></button>
+                            <button type="button" class="color-dot type-color-dot" data-color="#0f172a"
+                                style="background: #0f172a;" title="Executive Midnight Black"></button>
+                            <button type="button" class="color-dot type-color-dot" data-color="#78350f"
+                                style="background: #78350f;" title="Vintage Bronze Sepia"></button>
+                        </div>
+                    </div>
+
+                    <div class="font-styles-list">
+                        <!-- Style 1: Royal Executive (Mrs Saint Delafield) -->
+                        <div class="font-option active" data-font="'Mrs Saint Delafield', cursive" data-scale="1.35" data-slant="0.08">
+                            <span class="font-name-tag">Royal Executive</span>
+                            <span class="font-preview" id="font-preview-1" style="font-family: 'Mrs Saint Delafield', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 2: Diplomat Calligraphy (Herr Von Muellerhoff) -->
+                        <div class="font-option" data-font="'Herr Von Muellerhoff', cursive" data-scale="1.3" data-slant="0.06">
+                            <span class="font-name-tag">Diplomat Master</span>
+                            <span class="font-preview" id="font-preview-2" style="font-family: 'Herr Von Muellerhoff', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 3: Penthouse Luxury (Pinyon Script) -->
+                        <div class="font-option" data-font="'Pinyon Script', cursive" data-scale="1.15" data-slant="0.07">
+                            <span class="font-name-tag">Penthouse Luxury</span>
+                            <span class="font-preview" id="font-preview-3" style="font-family: 'Pinyon Script', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 4: Artistic Flow (Great Vibes) -->
+                        <div class="font-option" data-font="'Great Vibes', cursive" data-scale="1.05" data-slant="0.05">
+                            <span class="font-name-tag">Artistic Flow</span>
+                            <span class="font-preview" id="font-preview-4" style="font-family: 'Great Vibes', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 5: Presidential Executive (Alex Brush) -->
+                        <div class="font-option" data-font="'Alex Brush', cursive" data-scale="1.15" data-slant="0.07">
+                            <span class="font-name-tag">Presidential Flow</span>
+                            <span class="font-preview" id="font-preview-5" style="font-family: 'Alex Brush', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 6: Distinguished Diplomat (Monsieur La Doulaise) -->
+                        <div class="font-option" data-font="'Monsieur La Doulaise', cursive" data-scale="1.1" data-slant="0.04">
+                            <span class="font-name-tag">Distinguished Scroll</span>
+                            <span class="font-preview" id="font-preview-6" style="font-family: 'Monsieur La Doulaise', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 7: Modern Executive (Sacramento) -->
+                        <div class="font-option" data-font="'Sacramento', cursive" data-scale="1.3" data-slant="0.06">
+                            <span class="font-name-tag">Modern Autograph</span>
+                            <span class="font-preview" id="font-preview-7" style="font-family: 'Sacramento', cursive;">Autograph</span>
+                        </div>
+                        <!-- Style 8: Classic Script (Allura) -->
+                        <div class="font-option" data-font="'Allura', cursive" data-scale="1.2" data-slant="0.05">
+                            <span class="font-name-tag">Classic Signature</span>
+                            <span class="font-preview" id="font-preview-8" style="font-family: 'Allura', cursive;">Autograph</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sig-modal-footer">
+                <label class="remember-sig-checkbox" id="remember-sig-label">
+                    <input type="checkbox" id="remember-sig-check" checked>
+                    <span>Save as default signature</span>
+                </label>
+                <div class="modal-footer-actions">
+                    <button type="button" id="sig-cancel-btn" class="btn btn-sig-cancel">Cancel</button>
+                    <button type="button" id="sig-apply-btn" class="btn btn-add">Apply Signature</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminal & Numbering Setup Modal -->
+    <div class="terminal-modal-overlay no-print" id="terminal-modal-overlay" hidden>
+        <div class="terminal-modal-panel">
+            <div class="terminal-modal-header">
+                <div class="terminal-modal-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <h3>Device & Numbering Setup</h3>
+                </div>
+                <button type="button" id="terminal-modal-close" class="modal-close-btn">&times;</button>
+            </div>
+
+            <div class="terminal-modal-body">
+                <div class="number-preview-card">
+                    <span class="preview-title">Live Invoice Number Preview:</span>
+                    <span class="preview-number" id="modal-preview-number">TEM-POS1-20260820-001</span>
+                </div>
+
+                <div class="setting-field-group">
+                    <label for="modal-prefix-input">Company Prefix:</label>
+                    <input type="text" id="modal-prefix-input" placeholder="e.g. TEM, INV, TOG" class="pill-input" maxlength="10">
+                    <span class="field-hint">Your brand or business initials</span>
+                </div>
+
+                <div class="setting-field-group">
+                    <label for="modal-terminal-input">Terminal / Device Identifier:</label>
+                    <input type="text" id="modal-terminal-input" placeholder="e.g. POS1, POS2, TAB1" class="pill-input" maxlength="10">
+                    <span class="field-hint">Unique code for THIS device to avoid number collisions offline</span>
+                    <div class="preset-pills">
+                        <span class="preset-label">Quick select:</span>
+                        <button type="button" class="preset-pill-btn" data-val="POS1">POS1</button>
+                        <button type="button" class="preset-pill-btn" data-val="POS2">POS2</button>
+                        <button type="button" class="preset-pill-btn" data-val="POS3">POS3</button>
+                        <button type="button" class="preset-pill-btn" data-val="PHONE1">PHONE1</button>
+                        <button type="button" class="preset-pill-btn" data-val="TAB1">TAB1</button>
+                    </div>
+                </div>
+
+                <div class="setting-field-group">
+                    <label for="modal-seq-input">Today's Sequence Number:</label>
+                    <input type="number" id="modal-seq-input" min="1" max="9999" class="pill-input" style="width: 120px;">
+                    <span class="field-hint">Sequence number for current date</span>
+                </div>
+            </div>
+
+            <div class="terminal-modal-footer">
+                <button type="button" id="terminal-modal-cancel" class="btn btn-sig-cancel">Cancel</button>
+                <button type="button" id="terminal-modal-save" class="btn btn-add">Save & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offline Device QR Transfer & Sync Modal -->
+    <div class="qr-modal-overlay no-print" id="qr-modal-overlay" hidden>
+        <div class="qr-modal-panel">
+            <div class="qr-modal-header">
+                <div class="qr-header-title">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <h3>Offline Device Sync (Zero Internet)</h3>
+                </div>
+                <button type="button" id="qr-modal-close" class="modal-close-btn">&times;</button>
+            </div>
+
+            <div class="qr-modal-tabs">
+                <button type="button" class="qr-tab-btn active" data-tab="show">📤 Share / Show QR</button>
+                <button type="button" class="qr-tab-btn" data-tab="scan">📥 Scan / Receive QR</button>
+                <button type="button" class="qr-tab-btn" data-tab="code">📋 Paste Data Code</button>
+            </div>
+
+            <div class="qr-modal-body">
+                <!-- Tab 1: Show Invoice QR -->
+                <div class="qr-tab-panel active" id="qr-panel-show">
+                    <p class="qr-instructions">Scan this QR code from another phone or device camera to instantly copy this invoice into their history offline.</p>
+                    <div class="qr-canvas-container">
+                        <canvas id="qr-code-canvas" width="240" height="240"></canvas>
+                    </div>
+                    <div class="qr-code-info">
+                        <span class="qr-code-label" id="qr-code-label">Invoice #TEM-POS1-20260820-001</span>
+                    </div>
+                    <div class="qr-actions">
+                        <button type="button" id="qr-copy-code-btn" class="btn btn-savefile">📋 Copy Data Code</button>
+                        <button type="button" id="qr-share-native-btn" class="btn btn-export">📲 1-Tap Share</button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Scan / Receive QR -->
+                <div class="qr-tab-panel" id="qr-panel-scan" hidden>
+                    <p class="qr-instructions">Point your camera at another device's invoice QR code or upload a photo of the QR code.</p>
+                    <div class="qr-scanner-wrapper">
+                        <video id="qr-video" playsinline></video>
+                        <div class="qr-scanner-guide" id="qr-scanner-guide">
+                            <div class="qr-scan-line"></div>
+                        </div>
+                    </div>
+                    <div class="qr-scan-controls">
+                        <button type="button" id="start-camera-btn" class="btn btn-add">📷 Start Camera Scan</button>
+                        <button type="button" id="stop-camera-btn" class="btn btn-sig-cancel" hidden>⏹ Stop Camera</button>
+                        <label class="btn btn-loadfile" style="margin:0; cursor:pointer;">
+                            📁 Scan from Photo
+                            <input type="file" id="qr-image-input" accept="image/*" hidden>
+                        </label>
+                    </div>
+                    <p class="qr-status-msg" id="qr-scan-status"></p>
+                </div>
+
+                <!-- Tab 3: Paste Data Code -->
+                <div class="qr-tab-panel" id="qr-panel-code" hidden>
+                    <p class="qr-instructions">If camera scanning is not available, paste the exported invoice data code below:</p>
+                    <textarea id="qr-paste-textarea" class="qr-paste-box" placeholder="Paste data code here (starts with TEM:...)..."></textarea>
+                    <div class="qr-actions">
+                        <button type="button" id="qr-import-pasted-btn" class="btn btn-add">📥 Import & Merge Invoice</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .catch(err => console.warn('[PWA] SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
