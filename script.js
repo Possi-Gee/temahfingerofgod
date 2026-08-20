@@ -269,6 +269,24 @@ function bindEvents() {
     document.getElementById('print-btn').removeEventListener('click', printInvoice);
     document.getElementById('print-btn').addEventListener('click', openPrintPreview);
 
+    // Save as Image
+    const saveImageBtn = document.getElementById('save-image-btn');
+    if (saveImageBtn) saveImageBtn.addEventListener('click', saveAsImage);
+
+    // B&W / Color toggle
+    const imgModeBW = document.getElementById('img-mode-bw');
+    const imgModeColor = document.getElementById('img-mode-color');
+    if (imgModeBW && imgModeColor) {
+        imgModeBW.addEventListener('click', () => {
+            imgModeBW.classList.add('active');
+            imgModeColor.classList.remove('active');
+        });
+        imgModeColor.addEventListener('click', () => {
+            imgModeColor.classList.add('active');
+            imgModeBW.classList.remove('active');
+        });
+    }
+
     // Print Preview Modal
     document.getElementById('preview-close-btn').addEventListener('click', closePrintPreview);
     document.getElementById('preview-print-btn').addEventListener('click', () => {
@@ -1226,14 +1244,34 @@ function updateTotal() {
     // Display formatted values
     document.getElementById('subtotal').textContent = `${currency} ${formatMoney(subtotal)}`;
     
+    // Update Discount Display and Clean Print Label
+    const discountLabel = document.getElementById('discount-label');
     const discountAmtEl = document.getElementById('discount-amount');
     if (discountAmtEl) {
-        discountAmtEl.textContent = ` (${currency} ${formatMoney(discountAmount)})`;
+        if (discountAmount > 0) {
+            discountAmtEl.textContent = `(${currency} ${formatMoney(discountAmount)})`;
+            if (discountLabel) {
+                discountLabel.textContent = currentDiscountType === 'percent'
+                    ? `Discount (${clamp(rawDiscount, 0, 100)}%):`
+                    : `Discount:`;
+            }
+        } else {
+            discountAmtEl.textContent = `${currency} 0.00`;
+            if (discountLabel) discountLabel.textContent = 'Discount:';
+        }
     }
     
+    // Update VAT Display and Clean Print Label
+    const vatLabel = document.getElementById('vat-label');
     const vatAmtEl = document.getElementById('vat-amount');
     if (vatAmtEl) {
-        vatAmtEl.textContent = `${currency} ${formatMoney(vatAmount)}`;
+        if (vatAmount > 0) {
+            vatAmtEl.textContent = `${currency} ${formatMoney(vatAmount)}`;
+            if (vatLabel) vatLabel.textContent = `VAT (${vatPercent}%):`;
+        } else {
+            vatAmtEl.textContent = `${currency} 0.00`;
+            if (vatLabel) vatLabel.textContent = 'VAT:';
+        }
     }
     
     document.getElementById('invoice-total').textContent = `${currency} ${formatMoney(grandTotal)}`;
@@ -1844,6 +1882,140 @@ function printInvoice() {
         document.title = originalTitle;
         document.body.classList.remove('paper-10cm-mode');
     }, 1000);
+}
+
+async function saveAsImage() {
+    if (!validateInputs()) return;
+
+    const btn = document.getElementById('save-image-btn');
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Capturing...`;
+        btn.disabled = true;
+    }
+
+    // The invoice element
+    const invoiceEl = document.querySelector('.invoice');
+    if (!invoiceEl) {
+        if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+        alert('Could not find the invoice to capture.');
+        return;
+    }
+
+    // Temporarily force A4 mode for the capture
+    const paperSize = getPaperSize();
+    const wasSmall = document.body.classList.contains('paper-10cm-mode');
+
+    // A4 at 150dpi for sharp mobile viewing — width 794px (~A4 pixel width)
+    const A4_W = 794;
+    const scale = A4_W / invoiceEl.offsetWidth;
+
+    try {
+        if (!window.html2canvas) throw new Error('html2canvas not loaded');
+
+        const canvas = await html2canvas(invoiceEl, {
+            scale: Math.max(scale, 2),   // at least 2x for crispness
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            onclone: (doc) => {
+                // ── Hide toolbar / interactive UI elements ──────────────
+                doc.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+                doc.querySelectorAll('.calc-input-group, .percent-sign, .discount-toggle-btn').forEach(el => {
+                    el.style.display = 'none';
+                });
+                doc.querySelectorAll('.summary-line.calc-row').forEach(el => {
+                    el.style.display = 'flex';
+                });
+
+                // ── Fix html2canvas input rendering: replace all inputs
+                //    with styled divs so text doesn't sink or disappear ──
+                doc.querySelectorAll('input, textarea, select').forEach(input => {
+                    const computed = window.getComputedStyle(input);
+                    const div = doc.createElement('div');
+
+                    // Copy the visible value text
+                    if (input.tagName === 'SELECT') {
+                        div.textContent = input.options[input.selectedIndex]?.text || '';
+                    } else {
+                        div.textContent = input.value || input.placeholder || '';
+                        if (!input.value && input.placeholder) {
+                            div.style.color = '#9ca3af'; // placeholder grey
+                        }
+                    }
+
+                    // Mirror dimensions and typography exactly
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.width = computed.width;
+                    div.style.minWidth = computed.minWidth;
+                    div.style.height = computed.height;
+                    div.style.minHeight = computed.minHeight;
+                    div.style.padding = computed.padding;
+                    div.style.margin = computed.margin;
+                    div.style.border = computed.border;
+                    div.style.borderRadius = computed.borderRadius;
+                    div.style.background = computed.background || '#f8fafc';
+                    div.style.fontFamily = computed.fontFamily;
+                    div.style.fontSize = computed.fontSize;
+                    div.style.fontWeight = computed.fontWeight;
+                    div.style.color = div.style.color || computed.color;
+                    div.style.lineHeight = 'normal';
+                    div.style.boxSizing = 'border-box';
+                    div.style.overflow = 'hidden';
+                    div.style.whiteSpace = 'nowrap';
+                    div.style.textOverflow = 'ellipsis';
+
+                    input.parentNode.replaceChild(div, input);
+                });
+            }
+        });
+
+        // ── B&W or Color based on user toggle ────────────────────────────
+        const isBW = document.getElementById('img-mode-bw')?.classList.contains('active') !== false
+            && !document.getElementById('img-mode-color')?.classList.contains('active');
+
+        let finalCanvas = canvas;
+        if (isBW) {
+            const bwCanvas = document.createElement('canvas');
+            bwCanvas.width = canvas.width;
+            bwCanvas.height = canvas.height;
+            const bwCtx = bwCanvas.getContext('2d');
+            bwCtx.drawImage(canvas, 0, 0);
+            const imgData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                data[i] = data[i + 1] = data[i + 2] = gray;
+            }
+            bwCtx.putImageData(imgData, 0, 0);
+            finalCanvas = bwCanvas;
+        }
+        // ─────────────────────────────────────────────────────────────────
+
+        // Convert to PNG blob and trigger download
+        finalCanvas.toBlob((blob) => {
+            if (!blob) {
+                alert('Failed to generate image. Please try again.');
+                return;
+            }
+            const invNum = document.getElementById('invoice-number').textContent || 'Invoice';
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Invoice_${invNum}_TEMAH.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    } catch (err) {
+        console.error('Save as Image failed:', err);
+        alert('Could not save image. Make sure html2canvas is loaded (you may need an internet connection the first time).');
+    } finally {
+        if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+    }
 }
 
 /* ==========================================================================
@@ -2583,6 +2755,7 @@ function startCameraQRScan() {
 
 function stopCameraQRScan() {
     if (qrScanInterval) {
+        cancelAnimationFrame(qrScanInterval);
         clearInterval(qrScanInterval);
         qrScanInterval = null;
     }
@@ -2600,30 +2773,52 @@ function stopCameraQRScan() {
 }
 
 function startQRScanLoop() {
-    if (!('BarcodeDetector' in window)) {
-        const status = document.getElementById('qr-scan-status');
-        if (status) status.textContent = 'Live camera scanning requires BarcodeDetector API. You can take a photo with "Scan from Photo" or use "Paste Data Code".';
-        return;
-    }
-
-    const detector = new BarcodeDetector({ formats: ['qr_code'] });
     const video = document.getElementById('qr-video');
     const status = document.getElementById('qr-scan-status');
+    const scanCanvas = document.createElement('canvas');
+    const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 
-    qrScanInterval = setInterval(async () => {
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            try {
-                const barcodes = await detector.detect(video);
-                if (barcodes.length > 0) {
-                    const qrText = barcodes[0].rawValue;
+    function scanFrame() {
+        if (!qrMediaStream || !video || video.paused || video.ended) {
+            return;
+        }
+
+        if (video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+            scanCanvas.width = video.videoWidth;
+            scanCanvas.height = video.videoHeight;
+            scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+            const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+
+            // 1. Try with jsQR (Universal offline pure JS QR engine)
+            if (typeof jsQR !== 'undefined') {
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert"
+                });
+                if (code && code.data && code.data.trim()) {
                     stopCameraQRScan();
-                    processScannedQR(qrText);
+                    processScannedQR(code.data.trim());
+                    return;
                 }
-            } catch (err) {
-                // Ignore frame parse errors
+            }
+
+            // 2. Fallback to BarcodeDetector if available
+            if ('BarcodeDetector' in window) {
+                try {
+                    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+                    detector.detect(scanCanvas).then(barcodes => {
+                        if (barcodes.length > 0) {
+                            stopCameraQRScan();
+                            processScannedQR(barcodes[0].rawValue);
+                        }
+                    }).catch(() => {});
+                } catch (e) {}
             }
         }
-    }, 250);
+
+        qrScanInterval = requestAnimationFrame(scanFrame);
+    }
+
+    qrScanInterval = requestAnimationFrame(scanFrame);
 }
 
 function handleQRImageUpload(event) {
@@ -2632,10 +2827,29 @@ function handleQRImageUpload(event) {
     if (!file) return;
 
     const status = document.getElementById('qr-scan-status');
-    if (status) status.textContent = 'Scanning image...';
+    if (status) status.textContent = 'Scanning image for QR code...';
 
     const img = new Image();
     img.onload = async () => {
+        const c = document.createElement('canvas');
+        const cx = c.getContext('2d', { willReadFrequently: true });
+        c.width = img.naturalWidth || img.width;
+        c.height = img.naturalHeight || img.height;
+        cx.drawImage(img, 0, 0, c.width, c.height);
+        const imgData = cx.getImageData(0, 0, c.width, c.height);
+
+        // 1. Try jsQR
+        if (typeof jsQR !== 'undefined') {
+            const code = jsQR(imgData.data, imgData.width, imgData.height, {
+                inversionAttempts: "attemptBoth"
+            });
+            if (code && code.data && code.data.trim()) {
+                processScannedQR(code.data.trim());
+                return;
+            }
+        }
+
+        // 2. Try BarcodeDetector
         if ('BarcodeDetector' in window) {
             try {
                 const detector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -2646,6 +2860,7 @@ function handleQRImageUpload(event) {
                 }
             } catch (e) {}
         }
+
         if (status) status.textContent = 'Could not detect a QR code in the image. Please try pasting the data code instead.';
     };
     img.src = URL.createObjectURL(file);

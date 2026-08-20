@@ -114,6 +114,69 @@ body {
     background-color: #1e40af;
 }
 
+.btn-saveimage {
+    background: linear-gradient(135deg, #0f766e 0%, #047857 100%);
+}
+
+.btn-saveimage:hover {
+    background: linear-gradient(135deg, #0d6e66 0%, #036b49 100%);
+}
+
+/* Save as Image group: button + B&W/Color toggle */
+.save-image-group {
+    display: inline-flex;
+    align-items: stretch;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.save-image-group .btn-saveimage {
+    border-radius: 8px 0 0 8px;
+    box-shadow: none;
+}
+
+.image-mode-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(255,255,255,0.25);
+}
+
+.img-mode-btn {
+    flex: 1;
+    padding: 0 9px;
+    border: none;
+    background: #0d6e66;
+    color: rgba(255,255,255,0.65);
+    font-family: var(--font-main);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.img-mode-btn:first-child {
+    border-radius: 0 8px 0 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.img-mode-btn:last-child {
+    border-radius: 0 0 8px 0;
+}
+
+.img-mode-btn.active {
+    background: #fff;
+    color: #0f766e;
+}
+
+.img-mode-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+}
+
 .btn-history {
     background-color: #7c3aed;
 }
@@ -469,16 +532,18 @@ body {
 
 .cards-grid {
     display: grid;
-    grid-template-columns: minmax(0, 0.55fr) minmax(0, 1.45fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
     gap: 14px;
     margin-bottom: 18px;
     position: relative;
     z-index: 2;
+    align-items: stretch;
 }
 
 .info-card {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .card-header-tab {
@@ -508,11 +573,14 @@ body {
     justify-content: center;
     gap: 6px;
     min-height: 75px;
+    flex: 1 1 auto;
 }
 
 /* Customer Card Fields */
 .customer-card .card-body {
     flex-direction: column;
+    justify-content: space-evenly;
+    gap: 8px;
 }
 
 .customer-card .form-row {
@@ -733,16 +801,18 @@ body {
    Items Table & Centered Crystal-Clear Watermark
    ========================================================================== */
 
-/* Outer wrapper keeps watermark always visible regardless of table scroll */
+/* Outer wrapper keeps watermark strictly inside table area */
 .table-section-wrapper {
     position: relative;
     z-index: 2;
     margin-bottom: 4px;
+    overflow: hidden;
+    border-radius: 8px;
 }
 
 .table-container {
     margin-bottom: 12px;
-    min-height: 140px;
+    min-height: 120px;
 }
 
 /* Subtle Centered Background Logo Watermark (Always Centered over the Table) */
@@ -757,13 +827,14 @@ body {
     justify-content: center;
     pointer-events: none;
     z-index: 5;
-    opacity: 0.16;
+    opacity: 0.14;
+    overflow: hidden;
 }
 
 .invoice-watermark img {
-    max-width: 320px;
-    max-height: 320px;
-    width: 60%;
+    max-width: 250px;
+    max-height: 85%;
+    width: auto;
     object-fit: contain;
 }
 
@@ -1926,8 +1997,60 @@ body {
     }
 
     .pill-select,
-    .small-pill-input {
+    .small-pill-input,
+    .calc-input-group,
+    .percent-sign,
+    .discount-toggle-btn {
         display: none !important;
+    }
+
+    .summary-line.calc-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    .table-section-wrapper {
+        overflow: hidden !important;
+        border-radius: 8px !important;
+        min-height: 110px !important;
+        position: relative !important;
+    }
+
+    .invoice-watermark {
+        position: absolute !important;
+        inset: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 0.11 !important;
+        overflow: hidden !important;
+    }
+
+    .invoice-watermark img {
+        max-width: 210px !important;
+        max-height: 80% !important;
+        object-fit: contain !important;
+    }
+
+    .cards-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1.25fr !important;
+        align-items: stretch !important;
+    }
+
+    .info-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+    }
+
+    .customer-card .card-body {
+        justify-content: space-evenly !important;
+    }
+
+    .invoice-table tbody td {
+        padding: 6px 10px !important;
     }
 
     .print-only {
@@ -2943,6 +3066,55 @@ body {
     display: flex;
     flex-direction: column;
 }
+
+/* First-time device welcome banner */
+.firsttime-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1.5px solid #6ee7b7;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    animation: bannerSlideIn 0.4s ease;
+}
+
+@keyframes bannerSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.firsttime-banner-icon {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.firsttime-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #065f46;
+    line-height: 1.5;
+}
+
+.firsttime-banner-text strong {
+    font-size: 14px;
+    font-weight: 800;
+    color: #032e22;
+}
+
+.firsttime-banner-text em {
+    font-style: normal;
+    font-weight: 700;
+    background: #a7f3d0;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
 
 .terminal-modal-header {
     display: flex;

@@ -1,11 +1,13 @@
-// TEM Invoice Manager - Robust Offline Service Worker v4
-const CACHE_NAME = "tem-invoice-v4";
+// TEM Invoice Manager - Robust Offline Service Worker v6
+const CACHE_NAME = "tem-invoice-v6";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./script.js",
+  "./jsQR.js",
+  "./html2canvas.min.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"

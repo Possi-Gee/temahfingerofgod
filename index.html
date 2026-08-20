@@ -42,6 +42,20 @@
                 </svg>
                 Print Invoice / PDF
             </button>
+            <div class="save-image-group no-print" title="Save invoice as an image to your gallery">
+                <button id="save-image-btn" class="btn btn-saveimage">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Save as Image
+                </button>
+                <div class="image-mode-toggle">
+                    <button id="img-mode-bw" class="img-mode-btn active" title="Black & White (default)">B&amp;W</button>
+                    <button id="img-mode-color" class="img-mode-btn" title="Full Colour">Color</button>
+                </div>
+            </div>
             <button id="save-btn" class="btn btn-history">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
@@ -383,19 +397,19 @@
                         <span class="sum-label">Subtotal:</span>
                         <span class="sum-value" id="subtotal">GH₵ 0.00</span>
                     </div>
-                    <div class="summary-line calc-row">
-                        <span class="sum-label">Discount:</span>
-                        <div class="calc-input-group">
+                    <div class="summary-line calc-row" id="discount-summary-row">
+                        <span class="sum-label" id="discount-label">Discount:</span>
+                        <div class="calc-input-group no-print">
                             <input type="number" id="discount-input" value="0" min="0" step="any"
                                 class="small-pill-input">
                             <button type="button" id="discount-type-btn" class="discount-toggle-btn"
                                 title="Click to switch between percentage (%) and fixed amount (GH₵)">%</button>
                         </div>
-                        <span id="discount-amount" class="calc-diff-amount print-only"></span>
+                        <span id="discount-amount" class="calc-diff-amount">GH₵ 0.00</span>
                     </div>
-                    <div class="summary-line calc-row">
-                        <span class="sum-label">VAT:</span>
-                        <div class="calc-input-group">
+                    <div class="summary-line calc-row" id="vat-summary-row">
+                        <span class="sum-label" id="vat-label">VAT:</span>
+                        <div class="calc-input-group no-print">
                             <input type="number" id="vat-input" value="0" min="0" max="100" step="any"
                                 class="small-pill-input">
                             <span class="percent-sign">%</span>
@@ -692,6 +706,16 @@
             </div>
 
             <div class="terminal-modal-body">
+
+                <!-- First-time welcome banner (shown only on new device, hidden on return visits) -->
+                <div id="terminal-firsttime-banner" class="firsttime-banner" hidden>
+                    <div class="firsttime-banner-icon">👋</div>
+                    <div class="firsttime-banner-text">
+                        <strong>Welcome to TEMAH Invoice!</strong>
+                        <span>We detected this is a new device. A unique ID has been suggested below — you can rename it to anything that makes sense (e.g. <em>POS1</em>, <em>PHONE-MAMA</em>, <em>FRONT-DESK</em>).</span>
+                    </div>
+                </div>
+
                 <div class="number-preview-card">
                     <span class="preview-title">Live Invoice Number Preview:</span>
                     <span class="preview-number" id="modal-preview-number">TEM-POS1-20260820-001</span>
@@ -801,6 +825,8 @@
         </div>
     </div>
 
+    <script src="html2canvas.min.js"></script>
+    <script src="jsQR.js"></script>
     <script src="script.js"></script>
 
     <!-- PWA Service Worker Registration -->
