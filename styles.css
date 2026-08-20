@@ -3504,6 +3504,10 @@ body {
         flex-shrink: 0 !important;
     }
 
+    .toolbar .save-image-group {
+        flex-shrink: 0 !important;
+    }
+
     .paper-selector-wrapper,
     .currency-selector-wrapper {
         margin-left: 0 !important;
