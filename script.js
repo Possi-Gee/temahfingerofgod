@@ -50,6 +50,7 @@ let qrMediaStream = null;
 let qrScanInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const isFirstLaunch = !localStorage.getItem(STORAGE_KEYS.deviceId);
     restoreLogo();
     restoreBusinessInfo();
     updateTerminalDisplay();
@@ -57,6 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
     setCurrentDateTime();
     loadState();
+    initReportsEvents();
+    if (isFirstLaunch) openFirstTimeSetup();
 });
 
 function addNewItemAndFocus() {
@@ -73,7 +76,8 @@ function addNewItemAndFocus() {
 }
 
 function bindEvents() {
-    document.getElementById('add-item-btn').addEventListener('click', addNewItemAndFocus);
+    const addItemBtn = document.getElementById('add-item-btn');
+    if (addItemBtn) addItemBtn.addEventListener('click', addNewItemAndFocus);
     const tableAddBtn = document.getElementById('table-add-item-btn');
     if (tableAddBtn) tableAddBtn.addEventListener('click', addNewItemAndFocus);
     document.getElementById('print-btn').addEventListener('click', printInvoice);
@@ -830,11 +834,37 @@ function getPrefix() {
 function getDeviceId() {
     let devId = localStorage.getItem(STORAGE_KEYS.deviceId);
     if (!devId) {
-        // Auto-assign POS1 on first launch
-        devId = 'POS1';
+        // First launch: auto-generate a unique device ID instead of a blank/duplicate
+        devId = generateDeviceSuggestion();
         localStorage.setItem(STORAGE_KEYS.deviceId, devId);
     }
     return devId;
+}
+
+function detectDeviceType() {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|webos|blackberry|iemobile|opera mini/i.test(ua);
+    if (isMobile) {
+        const w = Math.min(window.screen.width || 0, window.screen.height || 0);
+        return w >= 600 ? 'TAB' : 'PHONE';
+    }
+    return 'PC';
+}
+
+function generateDeviceSuggestion() {
+    const type = detectDeviceType();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // excludes confusing I,O,0,1
+    let code = '';
+    for (let i = 0; i < 3; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return `${type}-${code}`;
+}
+
+function openFirstTimeSetup() {
+    const banner = document.getElementById('terminal-firsttime-banner');
+    if (banner) banner.hidden = false;
+    openTerminalModal();
 }
 
 function updateTerminalDisplay() {
@@ -1578,6 +1608,13 @@ function renderHistory(filteredItems) {
         qrBtn.title = 'Show QR code to beam this invoice to another device offline';
         qrBtn.addEventListener('click', () => openQRModal(item));
 
+        const payBtn = document.createElement('button');
+        payBtn.className = 'history-btn pay';
+        payBtn.textContent = 'Mark Paid';
+        payBtn.title = 'Mark this invoice as PAID in one tap (updates the sales report)';
+        payBtn.addEventListener('click', () => markHistoryPaid(item.id));
+        if ((item.paymentStatus || 'PAID') === 'PAID') payBtn.hidden = true;
+
         const loadBtn = document.createElement('button');
         loadBtn.className = 'history-btn load';
         loadBtn.textContent = 'Load';
@@ -1591,11 +1628,14 @@ function renderHistory(filteredItems) {
         actions.appendChild(previewBtn);
         actions.appendChild(printBtn);
         actions.appendChild(qrBtn);
+        actions.appendChild(payBtn);
         actions.appendChild(loadBtn);
         actions.appendChild(delBtn);
         li.appendChild(actions);
         list.appendChild(li);
     });
+
+    renderReports();
 }
 
 function filterRenderHistory() {
@@ -1631,6 +1671,256 @@ function filterRenderHistory() {
     // 'newest' is default (already in order)
 
     renderHistory(history);
+}
+
+/* ==========================================================================
+   Sales Reports / Dashboard
+   ========================================================================== */
+
+let currentReportPeriod = 'today';
+
+function getReportHistory() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]');
+}
+
+function reportPeriodStart(period) {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (period === 'today') return d;
+    if (period === 'week') {
+        const sinceMonday = d.getDay() === 0 ? 6 : d.getDay() - 1;
+        d.setDate(d.getDate() - sinceMonday);
+        return d;
+    }
+    if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+    return null; // 'all'
+}
+
+function parseSavedAt(savedAt) {
+    if (!savedAt) return null;
+    const t = new Date(savedAt);
+    return isNaN(t.getTime()) ? null : t;
+}
+
+function buildReportData(period) {
+    const start = reportPeriodStart(period);
+    const history = getReportHistory().filter(h => {
+        if (!start) return true;
+        const t = parseSavedAt(h.savedAt);
+        return t && t >= start;
+    });
+
+    const currency = (history[0] && history[0].currency) || getCurrency() || 'GH₵';
+    const data = {
+        currency,
+        totalSales: 0,
+        invoiceCount: history.length,
+        itemsSold: 0,
+        status: {},
+        statusCount: {},
+        items: {},
+        customers: {},
+        daily: {}
+    };
+
+    history.forEach(h => {
+        const total = h.total || 0;
+        data.totalSales += total;
+        const st = h.paymentStatus || 'PAID';
+        data.status[st] = (data.status[st] || 0) + total;
+        data.statusCount[st] = (data.statusCount[st] || 0) + 1;
+
+        (h.items || []).forEach(it => {
+            const qty = it.quantity || 0;
+            data.itemsSold += qty;
+            const rev = (it.price || 0) * qty;
+            const name = (it.description || '').trim() || 'Item';
+            if (!data.items[name]) data.items[name] = { qty: 0, revenue: 0 };
+            data.items[name].qty += qty;
+            data.items[name].revenue += rev;
+        });
+
+        const cust = (h.customerName || '').trim() || 'Walk-in Customer';
+        if (!data.customers[cust]) data.customers[cust] = { count: 0, revenue: 0 };
+        data.customers[cust].count += 1;
+        data.customers[cust].revenue += total;
+
+        const t = parseSavedAt(h.savedAt);
+        if (t) {
+            const key = t.toLocaleDateString();
+            if (!data.daily[key]) data.daily[key] = { count: 0, revenue: 0 };
+            data.daily[key].count += 1;
+            data.daily[key].revenue += total;
+        }
+    });
+
+    data.topItems = Object.entries(data.items).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+    data.topCustomers = Object.entries(data.customers).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+    data.dailyList = Object.entries(data.daily).sort((a, b) => (a[0] < b[0] ? -1 : 1)).slice(-7);
+    data.maxDailyRevenue = Math.max(1, ...data.dailyList.map(([, v]) => v.revenue));
+    return data;
+}
+
+function renderReports() {
+    const section = document.getElementById('reports');
+    if (!section) return;
+    const data = buildReportData(currentReportPeriod);
+    const isEmpty = data.invoiceCount === 0;
+
+    const emptyEl = document.getElementById('report-empty');
+    if (emptyEl) emptyEl.hidden = !isEmpty;
+    document.querySelectorAll('#reports .report-summary-grid, #reports .report-detail-grid').forEach(el => {
+        el.style.display = isEmpty ? 'none' : '';
+    });
+
+    const money = v => `${data.currency} ${formatMoney(v)}`;
+
+    document.getElementById('report-total-sales').textContent = money(data.totalSales);
+    document.getElementById('report-total-sales-sub').textContent = `${data.invoiceCount} invoice${data.invoiceCount !== 1 ? 's' : ''}`;
+    document.getElementById('report-invoice-count').textContent = data.invoiceCount;
+    document.getElementById('report-invoice-count-sub').textContent = `${money(data.totalSales)} combined`;
+    document.getElementById('report-items-sold').textContent = data.itemsSold;
+    document.getElementById('report-unpaid-total').textContent = money(data.status.UNPAID || 0);
+    const pending = data.status.PENDING || 0;
+    document.getElementById('report-unpaid-sub').textContent = pending > 0 ? `+ ${money(pending)} pending` : 'All settled';
+
+    // Payment status breakdown
+    const statusEl = document.getElementById('report-status-breakdown');
+    const statusDefs = [
+        { key: 'PAID', label: 'Paid', cls: 'paid' },
+        { key: 'PENDING', label: 'Pending', cls: 'pending' },
+        { key: 'UNPAID', label: 'Unpaid', cls: 'unpaid' }
+    ];
+    statusEl.innerHTML = statusDefs.map(s => {
+        const amt = data.status[s.key] || 0;
+        const cnt = data.statusCount[s.key] || 0;
+        const pct = data.totalSales > 0 ? Math.round((amt / data.totalSales) * 100) : 0;
+        return `
+            <div class="report-status-row">
+                <span class="report-status-name"><span class="dot dot-${s.cls}"></span>${s.label}</span>
+                <span class="report-status-bar"><span class="report-status-fill fill-${s.cls}" style="width:${pct}%"></span></span>
+                <span class="report-status-amt">${money(amt)} <em>(${cnt})</em></span>
+            </div>`;
+    }).join('');
+
+    // Daily sales breakdown
+    const dailyEl = document.getElementById('report-daily-breakdown');
+    if (data.dailyList.length === 0) {
+        dailyEl.innerHTML = '<div class="report-mini-empty">No sales in this period.</div>';
+    } else {
+        dailyEl.innerHTML = data.dailyList.map(([day, v]) => `
+            <div class="report-day-row">
+                <span class="report-day-label">${day}</span>
+                <span class="report-day-bar"><span class="report-day-fill" style="width:${Math.round((v.revenue / data.maxDailyRevenue) * 100)}%"></span></span>
+                <span class="report-day-amt">${money(v.revenue)}</span>
+            </div>`).join('');
+    }
+
+    // Top products
+    const itemsEl = document.getElementById('report-top-items');
+    if (data.topItems.length === 0) {
+        itemsEl.innerHTML = '<div class="report-mini-empty">No products sold in this period.</div>';
+    } else {
+        itemsEl.innerHTML = '<div class="report-table-head"><span>Product</span><span>Qty</span><span>Revenue</span></div>' +
+            data.topItems.map(([name, v]) => `
+            <div class="report-table-row">
+                <span class="report-table-name" title="${name.replace(/"/g, '&quot;')}">${name}</span>
+                <span class="report-table-qty">${v.qty}</span>
+                <span class="report-table-amt">${money(v.revenue)}</span>
+            </div>`).join('');
+    }
+
+    // Top customers
+    const custEl = document.getElementById('report-top-customers');
+    if (data.topCustomers.length === 0) {
+        custEl.innerHTML = '<div class="report-mini-empty">No customers recorded in this period.</div>';
+    } else {
+        custEl.innerHTML = '<div class="report-table-head"><span>Customer</span><span>Invoices</span><span>Total</span></div>' +
+            data.topCustomers.map(([name, v]) => `
+            <div class="report-table-row">
+                <span class="report-table-name" title="${name.replace(/"/g, '&quot;')}">${name}</span>
+                <span class="report-table-qty">${v.count}</span>
+                <span class="report-table-amt">${money(v.revenue)}</span>
+            </div>`).join('');
+    }
+}
+
+function exportReportCSV() {
+    const start = reportPeriodStart(currentReportPeriod);
+    const history = getReportHistory().filter(h => {
+        if (!start) return true;
+        const t = parseSavedAt(h.savedAt);
+        return t && t >= start;
+    });
+    if (history.length === 0) {
+        alert('No invoices in this report period to export.');
+        return;
+    }
+
+    const headers = [
+        'Invoice No', 'Date & Time', 'Customer Name', 'Customer Phone',
+        'Cashier', 'Payment Method', 'Payment Status', 'Currency',
+        'Subtotal', 'Discount Applied', 'VAT %', 'Grand Total',
+        'Item Count', 'Items Summary'
+    ];
+    const escapeCSV = (str) => {
+        const val = (str === null || str === undefined) ? '' : String(str);
+        return `"${val.replace(/"/g, '""')}"`;
+    };
+    const csvLines = [headers.join(',')];
+
+    history.forEach(row => {
+        const itemsSummary = (row.items || [])
+            .map(i => `${i.description} (Qty: ${i.quantity}, Price: ${i.price})`)
+            .join('; ');
+        const discountDisplay = row.discountType === 'percent'
+            ? `${row.discount}%`
+            : `${row.currency} ${formatMoney(row.discount)}`;
+        const line = [
+            escapeCSV(row.invoiceNumber),
+            escapeCSV(row.savedAt),
+            escapeCSV(row.customerName),
+            escapeCSV(row.customerPhone),
+            escapeCSV(row.cashier),
+            escapeCSV(row.paymentMethod || 'Cash'),
+            escapeCSV(row.paymentStatus || 'PAID'),
+            escapeCSV(row.currency),
+            escapeCSV(formatMoney(row.subtotal || 0)),
+            escapeCSV(discountDisplay),
+            escapeCSV(`${row.vat || 0}%`),
+            escapeCSV(formatMoney(row.total || 0)),
+            escapeCSV((row.items || []).length),
+            escapeCSV(itemsSummary)
+        ];
+        csvLines.push(line.join(','));
+    });
+
+    const csvContent = '\uFEFF' + csvLines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TEMAH_Report_${currentReportPeriod}_${getTodayKey()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
+}
+
+function initReportsEvents() {
+    const periodWrap = document.getElementById('reports-period');
+    if (!periodWrap) return;
+    periodWrap.querySelectorAll('.report-period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            periodWrap.querySelectorAll('.report-period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentReportPeriod = btn.dataset.period;
+            renderReports();
+        });
+    });
+    const exportBtn = document.getElementById('export-report-btn');
+    if (exportBtn) exportBtn.addEventListener('click', exportReportCSV);
+    renderReports();
 }
 
 function loadFromHistory(id) {
@@ -1677,6 +1967,23 @@ function deleteFromHistory(id) {
     const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]');
     localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history.filter(h => h.id !== id)));
     renderHistory();
+}
+
+function markHistoryPaid(id) {
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]');
+    const item = history.find(h => h.id === id);
+    if (!item) return;
+    if ((item.paymentStatus || 'PAID') === 'PAID') {
+        renderHistory();
+        return;
+    }
+    item.paymentStatus = 'PAID';
+    localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
+    if (currentInvoiceNumber === item.invoiceNumber && currentPaymentStatus !== 'PAID') {
+        setPaymentStatus('PAID');
+    }
+    renderHistory();
+    alert(`Invoice #${item.invoiceNumber} marked as PAID.`);
 }
 
 /* ==========================================================================

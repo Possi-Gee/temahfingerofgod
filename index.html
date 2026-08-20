@@ -28,13 +28,6 @@
     <div class="app">
         <!-- Top Toolbar -->
         <div class="toolbar no-print" id="top-toolbar">
-            <button id="add-item-btn" class="btn btn-add">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v8M8 12h8" />
-                </svg>
-                Add Item
-            </button>
             <button id="print-btn" class="btn btn-print">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
@@ -454,6 +447,80 @@
                 <div class="banner-gold-line left"></div>
                 <div class="banner-slogan">“ YOUR TRUST MAKES US GROW ”</div>
                 <div class="banner-gold-line right"></div>
+            </div>
+        </div>
+
+        <!-- Sales Reports / Dashboard -->
+        <div class="reports no-print" id="reports">
+            <div class="reports-header-bar">
+                <div class="history-title-group">
+                    <h3>Sales Reports</h3>
+                    <span class="offline-sync-indicator" title="Live summaries calculated from your saved invoices">Auto-calculated</span>
+                </div>
+                <div class="reports-actions">
+                    <div class="reports-period" id="reports-period">
+                        <button type="button" class="report-period-btn active" data-period="today">Today</button>
+                        <button type="button" class="report-period-btn" data-period="week">This Week</button>
+                        <button type="button" class="report-period-btn" data-period="month">This Month</button>
+                        <button type="button" class="report-period-btn" data-period="all">All Time</button>
+                    </div>
+                    <button id="export-report-btn" class="btn btn-export-small" title="Download the invoices in the current report period as a CSV file">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Export Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="report-empty" id="report-empty" hidden>No invoices saved yet. Save an invoice to history and your reports will appear here.</div>
+
+            <div class="report-summary-grid">
+                <div class="report-card card-total">
+                    <span class="report-card-label">Total Sales</span>
+                    <span class="report-card-value" id="report-total-sales">GH₵ 0.00</span>
+                    <span class="report-card-sub" id="report-total-sales-sub"></span>
+                </div>
+                <div class="report-card card-count">
+                    <span class="report-card-label">Invoices</span>
+                    <span class="report-card-value" id="report-invoice-count">0</span>
+                    <span class="report-card-sub" id="report-invoice-count-sub"></span>
+                </div>
+                <div class="report-card card-items">
+                    <span class="report-card-label">Items Sold</span>
+                    <span class="report-card-value" id="report-items-sold">0</span>
+                    <span class="report-card-sub">Units across all invoices</span>
+                </div>
+                <div class="report-card card-unpaid">
+                    <span class="report-card-label">Unpaid Balance</span>
+                    <span class="report-card-value" id="report-unpaid-total">GH₵ 0.00</span>
+                    <span class="report-card-sub" id="report-unpaid-sub"></span>
+                </div>
+            </div>
+
+            <div class="report-detail-grid">
+                <div class="report-panel">
+                    <h4>Payment Status</h4>
+                    <div id="report-status-breakdown"></div>
+                </div>
+                <div class="report-panel">
+                    <h4>Daily Sales</h4>
+                    <div id="report-daily-breakdown"></div>
+                </div>
+            </div>
+
+            <div class="report-detail-grid">
+                <div class="report-panel">
+                    <h4>Top Products</h4>
+                    <div id="report-top-items"></div>
+                </div>
+                <div class="report-panel">
+                    <h4>Top Customers</h4>
+                    <div id="report-top-customers"></div>
+                </div>
             </div>
         </div>
 
